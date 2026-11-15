@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resultados</title>
+<style>
+  :root{--bg:#f4f6fb;--card:#fff;--txt:#1d2433;--ok:#1f9d55;--no:#d64545;--bor:#d9deea;--mut:#6b7488}
+  @media (prefers-color-scheme:dark){:root{--bg:#12151c;--card:#1b2030;--txt:#e8ebf3;--ok:#3ecf7a;--no:#ff6b6b;--bor:#343b52;--mut:#9aa3ba}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);padding:16px}
+  .wrap{max-width:760px;margin:0 auto}
+  h1{text-align:center;font-size:1.5rem;margin:8px 0}
+  .total{text-align:center;color:var(--mut);margin-bottom:20px}
+  .card{background:var(--card);border:1px solid var(--bor);border-radius:14px;padding:18px;margin-bottom:16px}
+  .card h2{font-size:1.05rem;margin:0 0 14px}
+  .bar{display:flex;height:38px;border-radius:10px;overflow:hidden;background:var(--bor)}
+  .bar div{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;min-width:0;transition:width .5s}
+  .ok{background:var(--ok)} .no{background:var(--no)}
+  .leg{display:flex;justify-content:space-between;margin-top:10px;font-size:1.05rem}
+  .leg b.ok{background:none;color:var(--ok)} .leg b.no{background:none;color:var(--no)}
+  .det{color:var(--mut);font-size:.85rem;margin-top:8px}
+  .err{color:var(--no);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Resultados</h1>
+  <div class="total" id="total">Cargando...</div>
+  <div id="out"></div>
+  <div class="err" id="err"></div>
+</div>
+<script>
+// Pega aquí la MISMA URL de tu aplicación web de Google Apps Script
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxR6xkQ2sFXvmfXMJtSzOEJP36o2AnKUsjD8SPDWV5BTcMHoSSHUnIXI0nIyIo-Q39kPg/exec";
+
+// Respuestas correctas (cámbialas aquí si lo necesitas)
+const CORRECTAS = { p1: "a", p2: "c", p3: "b" };
+
+const PREGUNTAS = {
+  p1: "1. ¿Ya cayó el imperio mundial de la religión falsa?",
+  p2: "2. ¿Qué es primero: el grito de paz y seguridad o la destrucción de Babilonia la Grande?",
+  p3: "3. ¿Está juzgando Jesucristo ahora a las personas como ovejas y cabras?"
+};
+const OPCIONES = {
+  p1: { a: "a) Sí", b: "b) No" },
+  p2: { a: "a) Primero el grito de paz y seguridad", b: "b) Primero la destrucción de Babilonia", c: "c) No sabemos con exactitud" },
+  p3: { a: "a) Sí", b: "b) No" }
+};
+
+async function cargar() {
+  try {
+    const r = await fetch(URL_SCRIPT);
+    const d = await r.json();
+    document.getElementById('err').textContent = '';
+    document.getElementById('total').textContent = d.total + ' persona(s) han respondido · se actualiza solo';
+    const out = document.getElementById('out');
+    out.innerHTML = '';
+    for (const p of ['p1', 'p2', 'p3']) {
+      const c = d[p] || {};
+      const bien = c[CORRECTAS[p]] || 0;
+      const mal = d.total - bien;
+      const pb = d.total ? (bien / d.total * 100) : 0;
+      const det = Object.keys(OPCIONES[p]).map(k => OPCIONES[p][k] + ': ' + (c[k] || 0)).join(' · ');
+      out.insertAdjacentHTML('beforeend', `
+        <div class="card"><h2>${PREGUNTAS[p]}</h2>
+          <div class="bar"><div class="ok" style="width:${pb}%">${bien ? Math.round(pb) + '%' : ''}</div><div class="no" style="width:${100 - pb}%">${mal ? Math.round(100 - pb) + '%' : ''}</div></div>
+          <div class="leg"><span>✅ Acertaron: <b class="ok">${bien}</b></span><span>❌ No acertaron: <b class="no">${mal}</b></span></div>
+          <div class="det">${det}</div></div>`);
+    }
+  } catch (e) {
+    document.getElementById('err').textContent = 'No se pudieron cargar los resultados. Revisa la URL del script.';
+  }
+}
+cargar();
+setInterval(cargar, 5000);
+</script>
+</body>
+</html>
